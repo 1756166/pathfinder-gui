@@ -1,6 +1,9 @@
 import pygame, csv
 from way_point import Waypoint
 
+def transpose(waypoints_info):
+	pass
+
 ''' -- FRC STANDARD FIELD DIMENSIONS -- 
  		27 ft 7 in X 54 ft 1 in
  		scale accordingly
@@ -26,18 +29,23 @@ del_waypoint_rect = display.blit(trash_can, (background.get_width() - 42, 0))
 
 CRASHED = False
 
-waypoint = Waypoint(xy=(100, 100))
+waypoint = Waypoint() # Default constructor
 waypoints_info = [(waypoint, waypoint.bounding_rect(display))]
 id = len(waypoints_info) - 1
 
 init_x, init_y = 10, 50
 
 selected_waypoint = None
+
 while not CRASHED:
 	clock.tick(60)
+	# Draws the delete button, add waypoint button, and bakckground image.
 	display.blit(background, (0, 0))
 	display.blit(plus_button, (0, 0))
 	display.blit(trash_can, (background.get_width() - 42, 0))
+
+	mouse_rect = pygame.Rect(pygame.mouse.get_pos(), (1, 1))
+
 	for waypnt, bounding_rect in waypoints_info:
 		waypnt.draw(display)
 
@@ -46,26 +54,31 @@ while not CRASHED:
 			CRASHED = True
 
 		if event.type == pygame.MOUSEBUTTONDOWN:
-			mouse_rect = pygame.Rect(pygame.mouse.get_pos(), (1, 1))
-
 			if add_waypoint_rect.contains(mouse_rect): # if the plus button is pressed
+				# add a new waypoint to array, which will then be drawn
 				id += 1
-				waypoints_info.append((Waypoint(id, (init_x, init_y)), Waypoint(id, (init_x, init_y)).bounding_rect(display)))
+				new_waypoint = Waypoint(id, [init_x, init_y])
+				waypoints_info.append((new_waypoint, new_waypoint.bounding_rect(display)))
 				init_y += 12
-			elif del_waypoint_rect.contains(mouse_rect):
+			if del_waypoint_rect.contains(mouse_rect): # if delete waypoint button is pressed
+				# delete last waypoint
 				if selected_waypoint is waypoints_info[-1]:
 					selected_waypoint = None
 				id -= 1
+				init_y -= 12
 				waypoints_info.pop(-1) # Deletes last elem in list of waypoints
 
-			for waypnt, bounding_rect in waypoints_info:
+			for waypnt, bounding_rect in waypoints_info: # Allows you to select other waypoints
 				if bounding_rect.contains(mouse_rect):
-					selected_waypoint = (waypnt, bounding_rect)
+					selected_waypoint = [waypnt, bounding_rect]
 
-		if event.type == pygame.MOUSEMOTION and event.buttons[0] == 1:
-			if selected_waypoint != None:
-				mouse_rect = pygame.Rect(pygame.mouse.get_pos(), (1, 1))
-				selected_waypoint[0].update_coords(pygame.mouse.get_pos())
+		if event.type == pygame.MOUSEMOTION and event.buttons[0] == 1: # if mouse is dragged
+			if not add_waypoint_rect.contains(mouse_rect) and not del_waypoint_rect.contains(mouse_rect):	
+				if selected_waypoint != None:
+					selected_waypoint[0].update_coords(list(pygame.mouse.get_pos()))
+					# Updates the waypoint coords 
+					selected_waypoint[1].x = selected_waypoint[0].coords[0] - 7
+					selected_waypoint[1].y = selected_waypoint[0].coords[1] - 7
 
 		pygame.display.update()
 

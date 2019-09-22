@@ -8,7 +8,7 @@ class Waypoint:
 	rot = 0
 	bounding_rect = None
 	radius = 7
-	def __init__(self, id = 0, xy = (0, 0), rotation = 0):
+	def __init__(self, id = 0, xy = [151, 145], rotation = 0):
 		self.coords = xy
 		self.id_num = id
 		self.rot = rotation
@@ -19,9 +19,9 @@ class Waypoint:
 		self.rot = rotation
 
 	def bounding_rect(self, surface):
-		self.bounding_rect = pygame.draw.circle(surface, self.white, self.coords, self.radius)
+		self.bounding_rect = pygame.draw.circle(surface, self.white, tuple(self.coords), self.radius)
 		return self.bounding_rect
 
 	def draw(self, surface):
-		pygame.draw.circle(surface, self.white, self.coords, self.radius)
+		pygame.draw.circle(surface, self.white, tuple(self.coords), self.radius)
 
