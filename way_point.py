@@ -3,7 +3,7 @@ import pygame
 class Waypoint:
 	white = (255, 255, 255)
 	orange = ()
-	coords = (0, 0)
+	coords = [0, 0]
 	id_num = 0
 	rot = 0
 	bounding_rect = None
@@ -24,4 +24,7 @@ class Waypoint:
 
 	def draw(self, surface):
 		pygame.draw.circle(surface, self.white, tuple(self.coords), self.radius)
+
+	def encapsulate(self):
+		return [self.coords[0], self.coords[1], self.rot]
 
