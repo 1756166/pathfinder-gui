@@ -22,8 +22,11 @@ class Waypoint:
 		self.bounding_rect = pygame.draw.circle(surface, self.white, tuple(self.coords), self.radius)
 		return self.bounding_rect
 
-	def draw(self, surface):
-		pygame.draw.circle(surface, self.white, tuple(self.coords), self.radius)
+	def draw(self, surface, other_color=None):
+		if other_color:
+			pygame.draw.circle(surface, other_color, tuple(self.coords), self.radius)
+		else:
+			pygame.draw.circle(surface, self.white, tuple(self.coords), self.radius)
 
 	def encapsulate(self):
 		return [self.coords[0], self.coords[1], self.rot]
