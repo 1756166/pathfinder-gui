@@ -5,40 +5,43 @@ from way_point import Waypoint
 		27 ft 7 in X 54 ft 1 in
 		scale accordingly
 '''
+def reset(waypoints_info, origin_x, origin_y):
+	for waypnt, bounding_rect in waypoints_info:
+		waypnt.coords[0] += origin_x
+		waypnt.coords[1] += origin_y
+		bounding_rect.x = waypnt.coords[0] - 7
+		bounding_rect.y = waypnt.coords[1] - 7
 
-def write_to_dict(dict_:dict, waypoints_info, key:str): # updates specified dictionary
+def write_to_dict(waypoints_info, key:str, alliance_color, origin_coords): # updates specified dictionary
 	copy = transpose(waypoints_info)
 	encapsulated_info = encapsulate(copy)
-	print(encapsulated_info)
-	dict_[key] = encapsulated_info
+	return {key: [alliance_color, encapsulated_info, origin_coords]}
 	
 def encapsulate(waypoints_info): # encapsulates info into easy-to-read list of lists
 	encapsulated_info = []
 	for waypnt, bounding_rect in waypoints_info:
 		encapsulated_info.append(waypnt.encapsulate())
-	print("encapsulated: ", encapsulated_info)
 	return encapsulated_info
 
 def transpose(waypoints_info): # transposes it to make it easier for json loader in java side
 	copy = []
 	for a_list in waypoints_info:
 		copy.append(a_list)
+	origin_x = copy[0][0].coords[0]
+	origin_y = copy[0][0].coords[1]
 	for waypnt, bounding_rect in copy:
-		waypnt.coords[0] -= 151
-		waypnt.coords[1] -= 145
+		waypnt.coords[0] -= origin_x
+		waypnt.coords[1] -= origin_y
 
 	return copy
 
-def simulate(alliance_color, title, dict):
+def simulate(title, existing_waypoints=None, alliance_color=None):
 
 	pygame.init()
 
 	background = pygame.image.load('Resources\\game_image.jpg')
 	background = pygame.transform.scale(background, (background.get_width() * 2, background.get_height() * 2))
 	dimensions = (background.get_width(), background.get_height())
-
-	if alliance_color == 'Red':
-		background = pygame.transform.rotate(background, 180)
 
 	# Init all images/buttons
 	plus_button = pygame.image.load('Resources\\add_waypoint.jpg')
@@ -57,8 +60,24 @@ def simulate(alliance_color, title, dict):
 
 	CRASHED = False
 
-	waypoint = Waypoint() # Default constructor
-	waypoints_info = [(waypoint, waypoint.bounding_rect(display))]
+	waypoints_info = []
+
+	if existing_waypoints:
+		if existing_waypoints[0] == 'Red':
+			background = pygame.transform.rotate(background, 180)
+
+		for i, encapsulated in enumerate(existing_waypoints[1]):
+			new_waypoint = Waypoint(i, [encapsulated[0], encapsulated[1]], encapsulated[2])
+			waypoints_info.append((new_waypoint, new_waypoint.bounding_rect(display)))
+
+		reset(waypoints_info)
+	else:
+		if alliance_color == 'Red':
+			background = pygame.transform.rotate(background, 180)
+
+		waypoint = Waypoint() # Default constructor
+		waypoints_info = [(waypoint, waypoint.bounding_rect(display))]
+
 	id = len(waypoints_info) - 1
 	selected_waypoint = None
 
@@ -87,7 +106,6 @@ def simulate(alliance_color, title, dict):
 
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
-				write_to_dict(dict, waypoints_info, title)
 				CRASHED = True
 
 			if event.type == pygame.MOUSEBUTTONDOWN:
@@ -121,5 +139,12 @@ def simulate(alliance_color, title, dict):
 
 			pygame.display.update()
 
+	origin_coords = waypoints_info[0][0].coords
+	print(origin_coords)
+	encapsulated_info = write_to_dict(waypoints_info, title, alliance_color, origin_coords)
+
+	reset(waypoints_info, origin_coords[0], origin_coords[1])
+		
 	pygame.quit()
+	return encapsulated_info
 
