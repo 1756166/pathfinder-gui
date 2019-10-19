@@ -5,37 +5,32 @@ from way_point import Waypoint
 		27 ft 7 in X 54 ft 1 in
 		scale accordingly
 '''
-def reset(waypoints_info, origin_x, origin_y):
-	for waypnt, bounding_rect in waypoints_info:
-		waypnt.coords[0] += origin_x
-		waypnt.coords[1] += origin_y
-		bounding_rect.x = waypnt.coords[0] - 7
-		bounding_rect.y = waypnt.coords[1] - 7
+def reset(waypoints_info, origin_coords):
+	for waypnt in waypoints_info:
+		waypnt.transpose(origin_coords)
 
-def write_to_dict(waypoints_info, key:str, alliance_color, origin_coords): # updates specified dictionary
-	copy = transpose(waypoints_info)
+def write_to_dict(waypoints_info, alliance_color): # updates specified dictionary
+	copy, origin_coords = transpose(waypoints_info)
 	encapsulated_info = encapsulate(copy)
-	return {key: [alliance_color, encapsulated_info, origin_coords]}
+	return [alliance_color, encapsulated_info, origin_coords]
 	
 def encapsulate(waypoints_info): # encapsulates info into easy-to-read list of lists
 	encapsulated_info = []
-	for waypnt, bounding_rect in waypoints_info:
+	for waypnt in waypoints_info:
 		encapsulated_info.append(waypnt.encapsulate())
+	
 	return encapsulated_info
 
 def transpose(waypoints_info): # transposes it to make it easier for json loader in java side
-	copy = []
-	for a_list in waypoints_info:
-		copy.append(a_list)
-	origin_x = copy[0][0].coords[0]
-	origin_y = copy[0][0].coords[1]
-	for waypnt, bounding_rect in copy:
-		waypnt.coords[0] -= origin_x
-		waypnt.coords[1] -= origin_y
+	copy = waypoints_info.copy()
 
-	return copy
+	origin_x = copy[0].coords[0]
+	origin_y = copy[0].coords[1]
+	for waypnt in copy:
+		waypnt.transpose([origin_x, origin_y])
+	return copy, [origin_x, origin_y]
 
-def simulate(title, existing_waypoints=None, alliance_color=None):
+def simulate(existing_waypoints=None, alliance_color=None):
 
 	pygame.init()
 
@@ -59,24 +54,24 @@ def simulate(title, existing_waypoints=None, alliance_color=None):
 	del_waypoint_rect = display.blit(trash_can, (0, 42))
 
 	CRASHED = False
-
 	waypoints_info = []
 
 	if existing_waypoints:
+		origin_coords = existing_waypoints[2]
+
 		if existing_waypoints[0] == 'Red':
 			background = pygame.transform.rotate(background, 180)
 
 		for i, encapsulated in enumerate(existing_waypoints[1]):
 			new_waypoint = Waypoint(i, [encapsulated[0], encapsulated[1]], encapsulated[2])
-			waypoints_info.append((new_waypoint, new_waypoint.bounding_rect(display)))
-
-		reset(waypoints_info)
+			waypoints_info.append(new_waypoint)
+		reset(waypoints_info, [origin_coords[0] * -1, origin_coords[1] * -1])
 	else:
 		if alliance_color == 'Red':
 			background = pygame.transform.rotate(background, 180)
 
 		waypoint = Waypoint() # Default constructor
-		waypoints_info = [(waypoint, waypoint.bounding_rect(display))]
+		waypoints_info = [waypoint]
 
 	id = len(waypoints_info) - 1
 	selected_waypoint = None
@@ -92,17 +87,20 @@ def simulate(title, existing_waypoints=None, alliance_color=None):
 		display.blit(trash_can, (0, 42))
 		mouse_rect = pygame.Rect(pygame.mouse.get_pos(), (1, 1))
 
-		if len(waypoints_info) > 1:	
+		if len(waypoints_info) > 1:
 			for i in range(1, len(waypoints_info)):
-				pygame.draw.line(display, (255, 165, 0), waypoints_info[i-1][0].coords, waypoints_info[i][0].coords)
+				pygame.draw.line(display, (255, 165, 0), waypoints_info[i-1].coords, waypoints_info[i].coords)
 				# Draw waypoints
-				waypoints_info[i-1][0].draw(display)
-				waypoints_info[i][0].draw(display)
-			waypoints_info[0][0].draw(display, (0, 255, 0))
-			waypoints_info[-1][0].draw(display, (255, 0, 0))
+				waypoints_info[i-1].draw(display)
+				waypoints_info[i].draw(display)
+			waypoints_info[0].draw(display, (0, 255, 0))
+			waypoints_info[-1].draw(display, (255, 0, 0))
 		else:
-			waypoints_info[0][0].draw(display)
-
+			waypoints_info[0].draw(display)
+		
+		for waypnt in waypoints_info:
+			waypnt.draw_line(display, [waypnt.coords[0]+10, waypnt.coords[1]])
+			pygame.draw.rect(display, (0, 255, 0), waypnt.angle_rect, 1)
 
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
@@ -113,7 +111,7 @@ def simulate(title, existing_waypoints=None, alliance_color=None):
 					# add a new waypoint to array, which will then be drawn
 					id += 1
 					new_waypoint = Waypoint(id, [init_x, init_y])
-					waypoints_info.append((new_waypoint, new_waypoint.bounding_rect(display)))
+					waypoints_info.append(new_waypoint)
 					init_y += 12
 				
 				elif del_waypoint_rect.contains(mouse_rect): # if delete waypoint button is pressed
@@ -125,26 +123,23 @@ def simulate(title, existing_waypoints=None, alliance_color=None):
 						init_y -= 12
 						waypoints_info.pop(-1) # Deletes last elem in list of waypoints
 
-				for waypnt, bounding_rect in waypoints_info: # Allows you to select other waypoints
-					if bounding_rect.contains(mouse_rect):
-						selected_waypoint = [waypnt, bounding_rect]
+				for waypnt in waypoints_info: # Allows you to select other waypoints
+					if waypnt.bounding_rect.contains(mouse_rect):
+						selected_waypoint = waypnt
+					
 
 			if event.type == pygame.MOUSEMOTION and event.buttons[0] == 1: # if mouse is dragged
 				if not add_waypoint_rect.contains(mouse_rect) and not del_waypoint_rect.contains(mouse_rect):	
-					if selected_waypoint != None and  selected_waypoint[1].contains(mouse_rect):
-						selected_waypoint[0].update_coords(list(pygame.mouse.get_pos()))
-						# Updates the waypoint coords 
-						selected_waypoint[1].x = selected_waypoint[0].coords[0] - 7
-						selected_waypoint[1].y = selected_waypoint[0].coords[1] - 7
+					if selected_waypoint != None and selected_waypoint.bounding_rect.contains(mouse_rect):
+						selected_waypoint.update_coords(list(pygame.mouse.get_pos()))
 
 			pygame.display.update()
 
-	origin_coords = waypoints_info[0][0].coords
-	print(origin_coords)
-	encapsulated_info = write_to_dict(waypoints_info, title, alliance_color, origin_coords)
+	encapsulated_info = write_to_dict(waypoints_info, alliance_color)
+	
+	# Resets coordinates for next time
+	origin_coords = [encapsulated_info[2][0] * -1, encapsulated_info[2][1] * -1]
+	reset(waypoints_info, origin_coords)
 
-	reset(waypoints_info, origin_coords[0], origin_coords[1])
-		
 	pygame.quit()
 	return encapsulated_info
-

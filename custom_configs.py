@@ -60,14 +60,15 @@ class MainWin(QWidget):
 		return widget_group
 
 	def create_new_gui(self, title, alliance_color):
-		path = pathfinder_gen.simulate(title, alliance_color=alliance_color)
-		self.waypoints[list(path.keys())[0]] = list(path.values())[0] 
+		path = pathfinder_gen.simulate(alliance_color=alliance_color)
+		self.waypoints[title] = path
 		print(self.waypoints)
 		self.mod_entries.clear()
 		self.mod_entries.addItems(list(self.waypoints.keys()))
 
 	def create_mod_gui(self, title):
-		path = pathfinder_gen.simulate(title, existing_waypoints=self.waypoints[title])
+		path = pathfinder_gen.simulate(existing_waypoints=self.waypoints[title])
+		self.waypoints[title] = path
 
 
 app = QApplication(sys.argv)
