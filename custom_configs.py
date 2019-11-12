@@ -55,20 +55,23 @@ class MainWin(QWidget):
 
 		for widget in widgets:
 			vbox.addWidget(widget)
-
+		
 		widget_group.setLayout(vbox)
 		return widget_group
-
+		
 	def create_new_gui(self, title, alliance_color):
+
 		path = pathfinder_gen.simulate(alliance_color=alliance_color)
 		self.waypoints[title] = path
 		print(self.waypoints)
 		self.mod_entries.clear()
 		self.mod_entries.addItems(list(self.waypoints.keys()))
+		
 
 	def create_mod_gui(self, title):
-		path = pathfinder_gen.simulate(existing_waypoints=self.waypoints[title])
+		path = pathfinder_gen.simulate(title, existing_waypoints=self.waypoints[title])
 		self.waypoints[title] = path
+		print(self.waypoints[title])
 
 
 app = QApplication(sys.argv)
