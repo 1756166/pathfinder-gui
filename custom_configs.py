@@ -1,4 +1,5 @@
 import sys, PyQt5, json, pathfinder_gen
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QApplication, QComboBox, QLineEdit, QGroupBox, QGridLayout, QVBoxLayout, QHBoxLayout, QPushButton, QMessageBox)
 from PyQt5.QtCore import pyqtSlot
 
@@ -12,6 +13,7 @@ class MainWin(QWidget):
 
 	def main(self):
 		self.setWindowTitle('Pathfinder Generation Hub')
+		self.setWindowIcon(QIcon('Resources\\pyqt_logo.png'))
 		self.setGeometry(100, 100, 400, 400)
 
 		self.new_path_name = QLineEdit(self)
@@ -35,6 +37,7 @@ class MainWin(QWidget):
 		self.grid.addWidget(self.widget_group([self.save_all_changes], 'Save Changes'), 1, 0)
 		self.grid.addWidget(self.widget_group(self.mod_path, 'Modify an existing path'), 0, 1)
 		self.setLayout(self.grid)
+		
 		self.show()
 
 	def load_json(self):
@@ -66,7 +69,6 @@ class MainWin(QWidget):
 			if list(self.waypoints.keys()).count(title) == 0:
 				path = pathfinder_gen.simulate(title, alliance_color=alliance_color)
 				self.waypoints[title] = path
-				print(self.waypoints)
 				self.mod_entries.clear()
 				self.mod_entries.addItems(list(self.waypoints.keys()))
 			else:
@@ -76,9 +78,11 @@ class MainWin(QWidget):
 		
 
 	def create_mod_gui(self, title):
-		path = pathfinder_gen.simulate(title, existing_waypoints=self.waypoints[title])
-		self.waypoints[title] = path
-		print(self.waypoints[title])
+		if len(list(self.waypoints.keys())) == 0:
+			QMessageBox.about(self, 'Error when modifying path', 'There are no existing paths to modify.')
+		else:
+			path = pathfinder_gen.simulate(title, existing_waypoints=self.waypoints[title])
+			self.waypoints[title] = path
 
 
 app = QApplication(sys.argv)

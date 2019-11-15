@@ -42,6 +42,7 @@ def simulate(title, existing_waypoints=None, alliance_color=None):
 
 	pygame.init()
 	pygame.display.set_caption('Generate Waypoints: ' + title)
+	pygame.display.set_icon(pygame.transform.scale(pygame.image.load('Resources\\pathfinder_logo.png'), (100, 100)))
 	background = pygame.image.load('Resources\\game_image.jpg')
 	background = pygame.transform.scale(background, (background.get_width() * 2, background.get_height() * 2))
 	dimensions = (background.get_width(), background.get_height())
@@ -119,7 +120,6 @@ def simulate(title, existing_waypoints=None, alliance_color=None):
 				angle_y = dist_y * rad/dist_waypnts
 
 				waypoints_info[i-1].set_endpoint([waypoints_info[i-1].coords[0] + angle_x, waypoints_info[i-1].coords[1] + angle_y])
-				print('coords: ', waypoints_info[i-1].coords, 'angle_endpoint: ', waypoints_info[i-1].angle_endpoint)
 				
 			waypoints_info[0].draw(display, (0, 255, 0)) # Start waypoint
 			waypoints_info[-1].draw(display, (255, 0, 0)) # End waypoint
