@@ -6,17 +6,21 @@ from way_point import Waypoint
 		scale accordingly
 '''
 def derive_rots(waypoints_info):
-	for waypnt in waypoints_info:
-		waypnt.derive_rot()
+	if len(waypoints_info) > 1:
+		for i in range(0, len(waypoints_info) - 1):
+			waypoints_info[i].derive_rot()
+	else:
+		waypoints_info[0].rot = 0
 
 def reset(waypoints_info, origin_coords):
 	for waypnt in waypoints_info:
 		waypnt.transpose(origin_coords)
 
-def write_to_dict(waypoints_info, alliance_color): # updates specified dictionary
+def write_to_dict(waypoints_info): # updates specified dictionary
+	derive_rots(waypoints_info)
 	copy, origin_coords = transpose(waypoints_info)
 	encapsulated_info = encapsulate(copy)
-	return [alliance_color, encapsulated_info, origin_coords]
+	return [encapsulated_info, origin_coords]
 	
 def encapsulate(waypoints_info): # encapsulates info into easy-to-read list of lists
 	encapsulated_info = []
@@ -61,17 +65,18 @@ def simulate(title, existing_waypoints=None, alliance_color=None):
 
 	# If modifying existing path
 	if existing_waypoints:
-		origin_coords = existing_waypoints[2]
+		origin_coords = existing_waypoints[1]
 
 		if existing_waypoints[0] == 'Red':
 			background = pygame.transform.rotate(background, 180)
 
-		for i, encapsulated in enumerate(existing_waypoints[1]):
-			new_waypoint = Waypoint(i, xy = [encapsulated[0], encapsulated[1]], rotation = encapsulated[2])
+		for i, encapsulated in enumerate(existing_waypoints[0]):
+			new_waypoint = Waypoint(i, xy = [encapsulated[0], encapsulated[1]])
 			waypoints_info.append(new_waypoint)
 		reset(waypoints_info, [origin_coords[0] * -1, origin_coords[1] * -1])
 		for waypnt in waypoints_info:
 			waypnt.set_endpoint([waypnt.coords[0] + waypnt.radius, waypnt.coords[1]])
+	
 	# If creating a new path
 	else:
 		if alliance_color == 'Red':
@@ -97,20 +102,29 @@ def simulate(title, existing_waypoints=None, alliance_color=None):
 
 		if len(waypoints_info) > 1:
 			# Draws the waypoints and the lines between each waypoint.
+			rad = waypoints_info[0].radius
 			for i in range(1, len(waypoints_info)):
 				pygame.draw.line(display, (255, 165, 0), waypoints_info[i-1].coords, waypoints_info[i].coords)
 				
 				# Draw waypoints
 				waypoints_info[i-1].draw(display)
 				waypoints_info[i].draw(display)
-			
+
+				dist_x = waypoints_info[i].coords[0] - waypoints_info[i-1].coords[0]
+				dist_y = (waypoints_info[i].coords[1] - waypoints_info[i-1].coords[1])
+
+				dist_waypnts = math.hypot(dist_x, dist_y)
+
+				angle_x = dist_x * rad/dist_waypnts
+				angle_y = dist_y * rad/dist_waypnts
+
+				waypoints_info[i-1].set_endpoint([waypoints_info[i-1].coords[0] + angle_x, waypoints_info[i-1].coords[1] + angle_y])
+				print('coords: ', waypoints_info[i-1].coords, 'angle_endpoint: ', waypoints_info[i-1].angle_endpoint)
+				
 			waypoints_info[0].draw(display, (0, 255, 0)) # Start waypoint
 			waypoints_info[-1].draw(display, (255, 0, 0)) # End waypoint
 		else:
 			waypoints_info[0].draw(display) # so that it doesn't draw the first one as green all the time
-		
-		for waypnt in waypoints_info:
-			waypnt.draw_line(display) # draws the lines representing each angle for the waypoint
  		
  		# draw the "selected circle" circle
 		if selected_waypoint != None:
@@ -146,25 +160,12 @@ def simulate(title, existing_waypoints=None, alliance_color=None):
 					if selected_waypoint != None and selected_waypoint.bounding_rect.contains(mouse_rect):
 						selected_waypoint.update_coords(list(pygame.mouse.get_pos()))
 
-					# If the mouse isn't clicking the circle just the rotation line
-					if selected_waypoint != None and not selected_waypoint.bounding_rect.contains(mouse_rect):
-						delta_x = pygame.mouse.get_pos()[0] - selected_waypoint.coords[0]
-						delta_y = pygame.mouse.get_pos()[1] - selected_waypoint.coords[1]
-
-						dist = math.sqrt(pow(delta_x, 2) + pow(delta_y, 2))
-
-						if dist != 0:
-							endpoint_x = selected_waypoint.coords[0] + (delta_x * selected_waypoint.radius/dist)
-							endpoint_y = selected_waypoint.coords[1] + (delta_y * selected_waypoint.radius/dist)
-							selected_waypoint.set_endpoint([endpoint_x, endpoint_y])
-
 			pygame.display.update()
 
-	derive_rots(waypoints_info)
-	encapsulated_info = write_to_dict(waypoints_info, alliance_color)
+	encapsulated_info = write_to_dict(waypoints_info)
 	
 	# Resets coordinates for next time
-	origin_coords = [encapsulated_info[2][0] * -1, encapsulated_info[2][1] * -1]
+	origin_coords = [encapsulated_info[1][0] * -1, encapsulated_info[1][1] * -1]
 	reset(waypoints_info, origin_coords)
 
 	pygame.quit()

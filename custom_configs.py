@@ -1,5 +1,5 @@
 import sys, PyQt5, json, pathfinder_gen
-from PyQt5.QtWidgets import (QWidget, QApplication, QComboBox, QLineEdit, QGroupBox, QGridLayout, QVBoxLayout, QHBoxLayout, QPushButton)
+from PyQt5.QtWidgets import (QWidget, QApplication, QComboBox, QLineEdit, QGroupBox, QGridLayout, QVBoxLayout, QHBoxLayout, QPushButton, QMessageBox)
 from PyQt5.QtCore import pyqtSlot
 
 class MainWin(QWidget):
@@ -48,6 +48,7 @@ class MainWin(QWidget):
 	def dump_json(self):
 		with open('waypoints.json', 'w') as f:
 			json.dump(self.waypoints, f, indent=4)
+		QMessageBox.about(self, 'Saving to JSON file', 'Successfuly saved to JSON file.')
 
 	def widget_group(self, widgets, title):
 		widget_group = QGroupBox(title)
@@ -55,17 +56,23 @@ class MainWin(QWidget):
 
 		for widget in widgets:
 			vbox.addWidget(widget)
+			vbox.addStretch()
 		
 		widget_group.setLayout(vbox)
 		return widget_group
 		
 	def create_new_gui(self, title, alliance_color):
-
-		path = pathfinder_gen.simulate(alliance_color=alliance_color)
-		self.waypoints[title] = path
-		print(self.waypoints)
-		self.mod_entries.clear()
-		self.mod_entries.addItems(list(self.waypoints.keys()))
+		if title.strip():
+			if list(self.waypoints.keys()).count(title) == 0:
+				path = pathfinder_gen.simulate(title, alliance_color=alliance_color)
+				self.waypoints[title] = path
+				print(self.waypoints)
+				self.mod_entries.clear()
+				self.mod_entries.addItems(list(self.waypoints.keys()))
+			else:
+				QMessageBox.about(self, 'Error when making new path', 'That path already exists.')
+		else: 
+			QMessageBox.about(self, 'Error whem making new path', 'A name was not provided for this path.')
 		
 
 	def create_mod_gui(self, title):
