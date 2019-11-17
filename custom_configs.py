@@ -1,6 +1,6 @@
 import sys, PyQt5, json, pathfinder_gen
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import (QWidget, QApplication, QComboBox, QLineEdit, QGroupBox, QGridLayout, QVBoxLayout, QHBoxLayout, QPushButton, QMessageBox)
+from PyQt5.QtWidgets import (QLabel, QWidget, QApplication, QComboBox, QLineEdit, QGroupBox, QGridLayout, QVBoxLayout, QHBoxLayout, QPushButton, QMessageBox)
 from PyQt5.QtCore import pyqtSlot
 
 class MainWin(QWidget):
@@ -14,28 +14,55 @@ class MainWin(QWidget):
 	def main(self):
 		self.setWindowTitle('Pathfinder Generation Hub')
 		self.setWindowIcon(QIcon('Resources\\pyqt_logo.png'))
-		self.setGeometry(100, 100, 400, 400)
+		self.setGeometry(100, 100, 400, 200)
+
+		self.left_group = QGroupBox('Add New Path')
+		self.left_half = QVBoxLayout()
+		self.man_names_r_hard = QHBoxLayout()
+
+		self.inner_left_half = QVBoxLayout()
+		self.inner_right_half = QVBoxLayout()
 
 		self.new_path_name = QLineEdit(self)
 		self.alliance_color = QComboBox(self)
 		self.alliance_color.addItems(['Red', 'Blue'])
 		self.new_path_submit = QPushButton('Add new path', self)
 		self.new_path_submit.clicked.connect(lambda: self.create_new_gui(self.new_path_name.text(), self.alliance_color.currentText()))
-		self.new_path = [self.new_path_name, self.alliance_color, self.new_path_submit]
+		
+		self.inner_left_half.addWidget(QLabel('Name of Path Config'))
+		self.inner_left_half.addWidget(self.new_path_name)
+		self.inner_right_half.addWidget(QLabel('Alliance Color'))
+		self.inner_right_half.addWidget(self.alliance_color)
+		self.man_names_r_hard.addLayout(self.inner_left_half)
+		self.man_names_r_hard.addSpacing(30)
+		self.man_names_r_hard.addLayout(self.inner_right_half)
+
+		self.left_half.addLayout(self.man_names_r_hard)
+		self.left_half.addWidget(self.new_path_submit)
+
+		self.left_group.setLayout(self.left_half)
+
+		self.right_group = QGroupBox('Modify Existing Path')
+
+		self.right_half = QVBoxLayout()
 
 		self.mod_entries = QComboBox(self)
 		self.mod_entries.addItems(list(self.waypoints.keys()))
 		self.mod_entry_button = QPushButton('Modify', self)
 		self.mod_entry_button.clicked.connect(lambda: self.create_mod_gui(self.mod_entries.currentText()))
-		self.mod_path = [self.mod_entries, self.mod_entry_button]
+
+		self.right_half.addWidget(self.mod_entries)
+		self.right_half.addWidget(self.mod_entry_button)
+		self.right_group.setLayout(self.right_half)
 
 		self.save_all_changes = QPushButton('Save All Changes', self)
 		self.save_all_changes.clicked.connect(self.dump_json)
 
+
 		self.grid = QGridLayout()
-		self.grid.addWidget(self.widget_group(self.new_path, 'Add new path configuration'), 0, 0)
-		self.grid.addWidget(self.widget_group([self.save_all_changes], 'Save Changes'), 1, 0)
-		self.grid.addWidget(self.widget_group(self.mod_path, 'Modify an existing path'), 0, 1)
+		self.grid.addWidget(self.left_group, 0, 0)
+		self.grid.addWidget(self.right_group, 1, 0)
+		self.grid.addWidget(self.save_all_changes)
 		self.setLayout(self.grid)
 		
 		self.show()
